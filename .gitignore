@@ -1,0 +1,12 @@
+# entornos virtuales de Python
+env/
+venv/
+__pycache__/
+
+# paquetes pesados de Node.js
+node_modules/
+
+# variable de entorno
+.env
+
+# Nota sobre la Base de Datos: 
