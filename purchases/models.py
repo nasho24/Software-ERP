@@ -5,9 +5,16 @@ from django.contrib.auth.models import User
 class Supplier(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
     name = models.CharField(max_length=200)
-    rut = models.CharField(max_length=12, unique=True)
+    # LE QUITAMOS EL unique=True DE AQUÍ:
+    rut = models.CharField(max_length=12)
     email = models.EmailField(blank=True, null=True)
     phone = models.CharField(max_length=20, blank=True, null=True)
+
+    class Meta:
+        # El proveedor es único por combinación de RUT y Usuario
+        constraints = [
+            models.UniqueConstraint(fields=['user', 'rut'], name='unique_supplier_per_user')
+        ]
 
     def __str__(self):
         return f"{self.name} ({self.rut})"

@@ -1,12 +1,9 @@
-# entornos virtuales de Python
-env/
+# Backend
 venv/
-__pycache__/
+*.pyc
+db.sqlite3
 
-# paquetes pesados de Node.js
+# Frontend
 node_modules/
-
-# variable de entorno
+dist/
 .env
-
-# Nota sobre la Base de Datos: 

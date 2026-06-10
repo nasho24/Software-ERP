@@ -5,8 +5,15 @@ from django.contrib.auth.models import User
 class Customer(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
     name = models.CharField(max_length=200, verbose_name="Nombre / Razón Social")
-    rut = models.CharField(max_length=20, unique=True, verbose_name="RUT") 
+    # LE QUITAMOS EL unique=True DE AQUÍ:
+    rut = models.CharField(max_length=20, verbose_name="RUT") 
     email = models.EmailField(blank=True, null=True, verbose_name="Correo")
+
+    class Meta:
+        # Hacemos que el RUT sea único SOLO para cada usuario particular
+        constraints = [
+            models.UniqueConstraint(fields=['user', 'rut'], name='unique_customer_per_user')
+        ]
 
     def __str__(self):
         return f"{self.name} ({self.rut})"
@@ -26,16 +33,12 @@ class SaleDetail(models.Model):
     quantity = models.IntegerField(verbose_name="Cantidad")
     price = models.DecimalField(max_digits=10, decimal_places=0, verbose_name="Precio Unitario")
     
-    # Sobrescribimos el método "save" para que haga cosas extras al guardar
     def save(self, *args, **kwargs):
-        # Si es un registro nuevo (no tiene ID todavía)
         if not self.pk: 
-            
-            # 2. VAMOS AL INVENTARIO Y DESCONTAMOS EL STOCK
             self.product.stock -= self.quantity
             self.product.save() 
             
-        super().save(*args, **kwargs) # Guardamos el detalle de la venta normalmente
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.quantity} x {self.product.name}"

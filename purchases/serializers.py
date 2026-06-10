@@ -5,6 +5,7 @@ class SupplierSerializer(serializers.ModelSerializer):
     class Meta:
         model = Supplier
         fields = '__all__'
+        read_only_fields = ['user']
 
 class PurchaseDetailSerializer(serializers.ModelSerializer):
     class Meta:
@@ -17,3 +18,4 @@ class PurchaseSerializer(serializers.ModelSerializer):
     class Meta:
         model = Purchase
         fields = '__all__'
+        read_only_fields = ['user']

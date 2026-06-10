@@ -5,24 +5,46 @@ import Dashboard from './pages/Dashboard';
 import Inventory from './pages/Inventory';
 import Sales from './pages/Sales';
 import Customers from './pages/Customers';
-import Login from './pages/login';
+import Login from './pages/Login'; // Asegúrate de que la L de Login coincida con tu archivo
 import Purchases from './pages/Purchases';
 import Suppliers from './pages/Suppliers';
 import Users from './pages/Users';
+import SpotlightSearch from './components/SpotlightSearch';
+import Reports from './pages/Reports';
 
 function App() {
-  // Estado para saber si el usuario está logueado o no
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
-  // Al cargar la página, revisamos si el usuario ya tenía su "pulsera" guardada
   useEffect(() => {
+    window.showToast = (message, type = 'success') => {
+      setToast({ show: true, message, type });
+      // Se esconde automáticamente después de 4 segundos
+      setTimeout(() => {
+        setToast({ show: false, message: '', type: 'success' });
+      }, 4000);
+    };
+  }, []);
+
+  // Función reutilizable para leer el token y setear los estados correspondientes
+  const verificarAutenticacion = () => {
     const token = localStorage.getItem('access_token');
     if (token) {
-      setIsAuthenticated(true);
-      const decoded = jwtDecode(token); // Decodificamos la "pulsera"
-      setIsAdmin(decoded.is_staff);
+      try {
+        const decoded = jwtDecode(token);
+        setIsAuthenticated(true);
+        setIsAdmin(decoded.is_staff); // Captura si es superusuario o staff en tiempo real
+      } catch (error) {
+        console.error("Token inválido:", error);
+        handleLogout();
+      }
     }
+  };
+
+  // Al cargar la página por primera vez, verificamos si ya estaba logueado
+  useEffect(() => {
+    verificarAutenticacion();
   }, []);
 
   // Función para cerrar sesión
@@ -32,13 +54,13 @@ function App() {
     setIsAdmin(false);
   };
 
-  // SI NO ESTÁ LOGUEADO, SOLO LE MOSTRAMOS EL LOGIN
+  // SI NO ESTÁ LOGUEADO, LE MOSTRAMOS EL LOGIN Y LE PASAMOS LA FUNCIÓN ACTUALIZADA
   if (!isAuthenticated) {
-    return <Login onLoginSuccess={() => setIsAuthenticated(true)} />;
+    return <Login onLoginSuccess={verificarAutenticacion} />;
   }
 
   // SI ESTÁ LOGUEADO, LE MOSTRAMOS EL SISTEMA COMPLETO
-return (
+  return (
     <Router>
       <div style={{ display: 'flex', minHeight: '100vh', fontFamily: "'Inter', sans-serif", backgroundColor: '#f1f5f9' }}>
         
@@ -80,6 +102,7 @@ return (
               { to: "/ventas", label: "Ventas", icon: "🛒" },
               { to: "/clientes", label: "Clientes", icon: "👥" },
               { to: "/proveedores", label: "Proveedores", icon: "🏭" },
+              { to: "/reportes", label: "Reportes Avanzados", icon: "📈" },
             ].map((item) => (
               <li key={item.to} style={{ marginBottom: '5px' }}>
                 <Link 
@@ -115,7 +138,7 @@ return (
             {/* --- SECCIÓN EXCLUSIVA PARA ADMINISTRADORES --- */}
             {isAdmin && (
               <>
-                <li style={{ marginTop: '25px', marginBottom: '5px' }}>
+                <li key="/usuarios" style={{ marginTop: '25px', marginBottom: '5px' }}>
                   <Link 
                     to="/usuarios" 
                     style={{ 
@@ -151,7 +174,7 @@ return (
             )}
           </ul>
           
-          {/* BOTÓN CERRAR SESIÓN */}
+{/* BOTÓN CERRAR SESIÓN */}
           <div style={{ marginTop: 'auto', paddingTop: '20px' }}>
             <button 
               onClick={handleLogout} 
@@ -181,6 +204,54 @@ return (
         {/* ÁREA CENTRAL DE CONTENIDO */}
         <main style={{ flex: 1, padding: '40px', overflowY: 'auto' }}>
           <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+    
+            {/* BARRA DE HERRAMIENTAS PREMIUM SUPERIOR */}
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center', 
+              marginBottom: '30px',
+              paddingBottom: '15px',
+              borderBottom: '1px solid #e2e8f0'
+            }}>
+              <div style={{ color: '#64748b', fontSize: '14px', fontWeight: '500' }}>
+                Sistema Operativo Activo
+              </div>
+      
+              {/* Botón indicador de búsqueda global */}
+              <div 
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '10px', 
+                  backgroundColor: 'white', 
+                  padding: '8px 16px', 
+                  borderRadius: '8px', 
+                  border: '1px solid #cbd5e1',
+                  color: '#94a3b8',
+                  fontSize: '13px',
+                  cursor: 'pointer',
+                  boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                }}
+                onClick={() => window.dispatchEvent(new KeyboardEvent('keydown', {'key': 'k', 'ctrlKey': true}))}
+              >
+                <span>🔍 Buscar módulo...</span>
+                <kbd style={{ 
+                  backgroundColor: '#f1f5f9', 
+                  border: '1px solid #cbd5e1', 
+                  borderRadius: '4px', 
+                  padding: '2px 6px', 
+                  fontSize: '11px', 
+                  fontWeight: 'bold',
+                  color: '#64748b' 
+                }}>Ctrl + K</kbd>
+              </div>
+            </div>
+
+            {/* COMPONENTE FLOTANTE DEL BUSCADOR */}
+            <SpotlightSearch />
+
+            {/* TUS RUTAS NORMALES */}
             <Routes>
               <Route path="/" element={<Dashboard />} /> 
               <Route path="/inventario" element={<Inventory />} />
@@ -189,9 +260,42 @@ return (
               <Route path="/clientes" element={<Customers />} />
               <Route path="/proveedores" element={<Suppliers />} />
               <Route path="/usuarios" element={<Users />} />
+              <Route path="/reportes" element={<Reports />} />
             </Routes>
           </div>
         </main>
+
+        {/* --- INTERFAZ PREMIUM DE NOTIFICACIÓN TOAST FLOTANTE --- */}
+        {toast.show && (
+          <div style={{
+            position: 'fixed',
+            bottom: '30px',
+            right: '30px',
+            backgroundColor: toast.type === 'success' ? '#065f46' : '#991b1b',
+            color: 'white',
+            padding: '16px 24px',
+            borderRadius: '8px',
+            boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.1)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            zIndex: 10000,
+            fontFamily: 'inherit',
+            fontSize: '14px',
+            fontWeight: '600',
+            borderLeft: `6px solid ${toast.type === 'success' ? '#34d399' : '#f87171'}`,
+            transition: 'all 0.3s ease'
+          }}>
+            <span>{toast.type === 'success' ? '✅' : '❌'}</span>
+            <span>{toast.message}</span>
+            <button 
+              onClick={() => setToast({ show: false, message: '', type: 'success' })}
+              style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', fontSize: '16px', marginLeft: '10px', padding: 0 }}
+            >
+              ✕
+            </button>
+          </div>
+        )}
 
       </div>
     </Router>

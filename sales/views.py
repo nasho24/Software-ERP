@@ -4,7 +4,8 @@ from .serializers import CustomerSerializer, SaleSerializer, SaleDetailSerialize
 
 class CustomerViewSet(viewsets.ModelViewSet):
     serializer_class = CustomerSerializer
-
+    queryset = Customer.objects.all()
+    
     def get_queryset(self):
         user = self.request.user
         if user.is_staff:

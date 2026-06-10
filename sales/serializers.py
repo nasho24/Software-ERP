@@ -5,6 +5,7 @@ class CustomerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Customer
         fields = '__all__'
+        read_only_fields = ['user']
 
 class SaleSerializer(serializers.ModelSerializer):
     # Esto es un truco para que la API nos devuelva el nombre del cliente y no solo su ID numérico
